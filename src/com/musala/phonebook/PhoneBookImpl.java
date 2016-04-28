@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import com.musala.phonebook.model.Person;
 
 public class PhoneBookImpl implements PhoneBook {
+
     private TreeMap<String, Person> personsByName = new TreeMap<>();
     private Person[] personsByCall = new Person[5];
 
@@ -40,23 +41,36 @@ public class PhoneBookImpl implements PhoneBook {
     public void deletePerson(String name) {
 
         personsByName.remove(name);
-
-        for (Person person : personsByCall) {
-            if (person != null && person.getName().equals(name)) {
-                person = getNextPerson();
+        for (int i = 0; i < personsByCall.length; i++) {
+            if (personsByCall[i].getName().equals(name)) {
+                personsByCall[i] = getNextPerson(name);
             }
         }
+        Arrays.sort(personsByCall, new Comparator<Person>() {
+
+            @Override
+            public int compare(Person o1, Person o2) {
+                if (o1 != null && o2 != null) {
+                    return o1.getCall() > o2.getCall() ? -1 : 1;
+                }
+                return 0;
+            }
+        });
     }
 
-    private Person getNextPerson() {
+    private Person getNextPerson(String name) {
         Person person = null;
         int maxCall = 0;
-        for (Entry<String, Person> pNum : personsByName.entrySet()) {
-            for (Person pCall : personsByCall) {
 
-                if (!pNum.equals(pCall) && pNum.getValue().getCall() > maxCall) {
-                    person = pNum.getValue();
+        for (Entry<String, Person> pNum : personsByName.entrySet()) {
+            boolean inMax = true;
+            for (int i = 0; i < personsByCall.length; i++) {
+                if (personsByCall[i].equals(pNum)) {
+                    inMax = false;
                 }
+            }
+            if (inMax && pNum.getValue().getCall() > maxCall) {
+                person = pNum.getValue();
             }
         }
         return person;
@@ -64,7 +78,13 @@ public class PhoneBookImpl implements PhoneBook {
 
     @Override
     public Person searchPerson(String name) {
-        return personsByName.get(name);
+        Person p = personsByName.get(name);
+        if (p != null) {
+            System.out.println(p.toString());
+        } else {
+            System.out.println("There is no person with name " + name);
+        }
+        return p;
     }
 
     @Override
@@ -80,6 +100,10 @@ public class PhoneBookImpl implements PhoneBook {
     @Override
     public void addCall(String name) {
         Person p = personsByName.get(name);
+        if (p == null) {
+            System.out.println("Invalid Person name - " + name);
+            return;
+        }
         p.setCall(p.getCall() + 1);
 
         boolean in = false;
@@ -106,7 +130,10 @@ public class PhoneBookImpl implements PhoneBook {
 
                 @Override
                 public int compare(Person o1, Person o2) {
-                    return o1.getCall() > o2.getCall() ? -1 : 1;
+                    if (o1 != null && o2 != null) {
+                        return o1.getCall() > o2.getCall() ? -1 : 1;
+                    }
+                    return 0;
                 }
             });
 
